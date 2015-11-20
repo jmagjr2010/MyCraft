@@ -20,9 +20,6 @@
 * Shift - Moves the camera down.
 * 
 ****************************************************************/
-import org.lwjgl.Sys;
-import org.lwjgl.input.Keyboard;
-import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.DisplayMode;
 import static org.lwjgl.opengl.GL11.*;
@@ -39,7 +36,8 @@ public class MyCraft {
         try {
             createWindow();
             initGL();
-            gameLoop(); // exectues render method
+            fp = new Camera(-20, -90, -30);
+            fp.gameLoop(); // exectues render method
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -80,176 +78,10 @@ public class MyCraft {
         glEnableClientState(GL_VERTEX_ARRAY);
         glEnableClientState(GL_COLOR_ARRAY);
         glEnable(GL_DEPTH_TEST);
+        glEnable(GL_TEXTURE_2D);
+        glEnableClientState(GL_TEXTURE_COORD_ARRAY);
     }
     
-    /**
-     * Main method used to run the game until the ESC key is pressed.
-     * Initializes Camera properties and other game configurations, and
-     * also executes the render method.
-     */
-    public void gameLoop() {
-        // Begin right in front of the cube
-        Camera camera = new Camera(0, 0, -3);
-        float dx = 0.0f;
-        float dy = 0.0f;
-        float dt = 0.0f;                // length of a frame
-        float lastTime = 0.0f;          // time since last frame
-        long time = 0;
-        float mouseSensitivity = 0.09f; // Camera Look Sensitivity
-        float movementSpeed = .35f;     // Camera movement speed
-        Mouse.setGrabbed(true);         // hides the mouse cursor
-        
-        // run simulation until the escape key is pressed.
-        while (!Display.isCloseRequested()
-                && !Keyboard.isKeyDown(Keyboard.KEY_ESCAPE)) {
-            time = Sys.getTime();
-            lastTime = time;
-            
-            //distance in mouse movement
-            //from the last getDX() call.
-            dx = Mouse.getDX();
-            
-            //distance in mouse movement
-            //from the last getDY() call.
-            dy = Mouse.getDY();
-
-            //controls camera yaw from x movement from the mouse
-            camera.yaw(dx * mouseSensitivity);
-            
-            //controls camera pitch from y movement from the mouse
-            camera.pitch(dy * mouseSensitivity);
-            
-            //Set Movement Controls
-            if (Keyboard.isKeyDown(Keyboard.KEY_W))//move forward
-            {
-                camera.walkForward(movementSpeed);
-            }
-            if (Keyboard.isKeyDown(Keyboard.KEY_S))//move backwards
-            {
-                camera.walkBackwards(movementSpeed);
-            }
-            if (Keyboard.isKeyDown(Keyboard.KEY_A))//strafe left 
-            {
-                camera.strafeLeft(movementSpeed);
-            }
-            if (Keyboard.isKeyDown(Keyboard.KEY_D))//strafe right 
-            {
-                camera.strafeRight(movementSpeed);
-            }
-            if (Keyboard.isKeyDown(Keyboard.KEY_SPACE))//move up 
-            {
-                camera.moveUp(movementSpeed);
-            }
-            if (Keyboard.isKeyDown(Keyboard.KEY_LSHIFT)) {
-                camera.moveDown(movementSpeed);
-            }
-            
-            //reset modelview matrix
-            glLoadIdentity();
-            
-            //look through the camera before you draw anything
-            camera.lookThrough();
-            
-            // Clear, render, and buffer scene
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-            render();
-            Display.update();
-            Display.sync(60);
-        }
-        Display.destroy();
-    }
-    
-    /**
-     * Primary method used to draw pixel graphics onto screen.
-     */
-    private void render() {
-        try {
-            glBegin(GL_QUADS);
-            //Top of block
-            glColor3f(0.0f, 0.0f, 1.0f);
-            glVertex3f(1.0f, 1.0f, -1.0f);
-            glVertex3f(-1.0f, 1.0f, -1.0f);
-            glVertex3f(-1.0f, 1.0f, 1.0f);
-            glVertex3f(1.0f, 1.0f, 1.0f);
-            //Bottom of block
-            glColor3f(0.0f, 1.0f, 0.0f);
-            glVertex3f(1.0f, -1.0f, 1.0f);
-            glVertex3f(-1.0f, -1.0f, 1.0f);
-            glVertex3f(-1.0f, -1.0f, -1.0f);
-            glVertex3f(1.0f, -1.0f, -1.0f);
-            //Front of block
-            glColor3f(1.0f, 0.0f, 0.0f);
-            glVertex3f(1.0f, 1.0f, 1.0f);
-            glVertex3f(-1.0f, 1.0f, 1.0f);
-            glVertex3f(-1.0f, -1.0f, 1.0f);
-            glVertex3f(1.0f, -1.0f, 1.0f);
-            //Back of block
-            glColor3f(0.0f, 1.0f, 1.0f);
-            glVertex3f(1.0f, -1.0f, -1.0f);
-            glVertex3f(-1.0f, -1.0f, -1.0f);
-            glVertex3f(-1.0f, 1.0f, -1.0f);
-            glVertex3f(1.0f, 1.0f, -1.0f);
-            //Left of block
-            glColor3f(1.0f, 0.0f, 1.0f);
-            glVertex3f(-1.0f, 1.0f, 1.0f);
-            glVertex3f(-1.0f, 1.0f, -1.0f);
-            glVertex3f(-1.0f, -1.0f, -1.0f);
-            glVertex3f(-1.0f, -1.0f, 1.0f);
-            //Right of block
-            glColor3f(1.0f, 1.0f, 0.0f);
-            glVertex3f(1.0f, 1.0f, -1.0f);
-            glVertex3f(1.0f, 1.0f, 1.0f);
-            glVertex3f(1.0f, -1.0f, 1.0f);
-            glVertex3f(1.0f, -1.0f, -1.0f);
-            glEnd();
-            
-            glBegin(GL_LINE_LOOP);
-            //Top
-            glColor3f(0.0f, 0.0f, 0.0f);
-            glVertex3f(1.0f, 1.0f, -1.0f);
-            glVertex3f(-1.0f, 1.0f, -1.0f);
-            glVertex3f(-1.0f, 1.0f, 1.0f);
-            glVertex3f(1.0f, 1.0f, 1.0f);
-            glEnd();
-            glBegin(GL_LINE_LOOP);
-            //Bottom
-            glVertex3f(1.0f, -1.0f, 1.0f);
-            glVertex3f(-1.0f, -1.0f, 1.0f);
-            glVertex3f(-1.0f, -1.0f, -1.0f);
-            glVertex3f(1.0f, -1.0f, -1.0f);
-            glEnd();
-            glBegin(GL_LINE_LOOP);
-            //Front
-            glVertex3f(1.0f, 1.0f, 1.0f);
-            glVertex3f(-1.0f, 1.0f, 1.0f);
-            glVertex3f(-1.0f, -1.0f, 1.0f);
-            glVertex3f(1.0f, -1.0f, 1.0f);
-            glEnd();
-            glBegin(GL_LINE_LOOP);
-            //Back
-            glVertex3f(1.0f, -1.0f, -1.0f);
-            glVertex3f(-1.0f, -1.0f, -1.0f);
-            glVertex3f(-1.0f, 1.0f, -1.0f);
-            glVertex3f(1.0f, 1.0f, -1.0f);
-            glEnd();
-            glBegin(GL_LINE_LOOP);
-            //Left
-            glVertex3f(-1.0f, 1.0f, 1.0f);
-            glVertex3f(-1.0f, 1.0f, -1.0f);
-            glVertex3f(-1.0f, -1.0f, -1.0f);
-            glVertex3f(-1.0f, -1.0f, 1.0f);
-            glEnd();
-            glBegin(GL_LINE_LOOP);
-            //Right
-            glVertex3f(1.0f, 1.0f, -1.0f);
-            glVertex3f(1.0f, 1.0f, 1.0f);
-            glVertex3f(1.0f, -1.0f, 1.0f);
-            glVertex3f(1.0f, -1.0f, -1.0f);
-            glEnd();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
     /**
      * Main Method used to initialize class and program.
      * @param args arguments passed in from command line(NOT USED).
