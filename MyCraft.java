@@ -3,12 +3,20 @@
 * author: Jorge Magana, Jonathan Wong, Michael Ng 
 * class: CS 445 – Computer Graphics
 * 
-* assignment: Quarter Project - Checkpoint 1
-* date last modified: 11/5/2015
+* assignment: Quarter Project - Checkpoint 2
+* date last modified: 11/19/2015
 * 
-* purpose: This program simulates a basic Minecraft-like game.
-* NOTE: I moved the camera render method to the main render method in this
-* file so the rendering takes place here. This is just for checkpoint 1.
+* purpose: This program simulates a basic Minecraft-like game. This version
+* should have created a 30x30 chunk area to render randomly placed blocks. The
+* minimum height has been set to 5 blocks in order to keep a foundation. The noise
+* generation can be modified in the Chunk.java file to increase or decrease terrain
+* levels. By default terrain levels are set to low to show smooth increase in hills
+* and valleys.
+* 
+* NOTE: Currently all blocks are also randomly textured. If you would like only
+* 1 type of texture to be displayed, please add 1.0 to r.nextInt() in the constructor
+* of the chunk class, that way the randomly generated block will always be a grass
+* block.
 * 
 * CONTROLS: 
 * ESC   - Closes the program.
@@ -36,7 +44,7 @@ public class MyCraft {
         try {
             createWindow();
             initGL();
-            fp = new Camera(-20, -90, -30);
+            fp = new Camera(-20, -50, -70);
             fp.gameLoop(); // exectues render method
         } catch (Exception e) {
             e.printStackTrace();
@@ -68,7 +76,7 @@ public class MyCraft {
      * Method used to initialize window for 2D pixel art.
      */
     private void initGL() {
-        glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+        glClearColor(0.1f, 0.6f, 0.9f, 0.0f);
         glMatrixMode(GL_PROJECTION);
         glLoadIdentity();
         GLU.gluPerspective(100.0f, (float) displayMode.getWidth() / (float) displayMode.getHeight(), 0.1f, 300.0f);

@@ -3,8 +3,8 @@
 * author: Jorge Magana, Jonathan Wong, Michael Ng 
 * class: CS 445 – Computer Graphics
 * 
-* assignment: Quarter Project - Checkpoint 1
-* date last modified: 11/5/2015
+* assignment: Quarter Project - Checkpoint 2
+* date last modified: 11/19/2015
 * 
 * purpose: This class is used to represent a block in the 3d space we created.
 * It holds an id, coordinates, and type properties for a block.
@@ -27,7 +27,8 @@ public class Block {
         BlockType_Water(2),
         BlockType_Dirt(3),
         BlockType_Stone(4),
-        BlockType_Bedrock(5);
+        BlockType_Bedrock(5),
+        BlockType_Default(-1);
         private int BlockID;
         
         // Instantiate Block ID

@@ -3,8 +3,8 @@
 * author: Jorge Magana, Jonathan Wong, Michael Ng 
 * class: CS 445 – Computer Graphics
 * 
-* assignment: Quarter Project - Checkpoint 1
-* date last modified: 11/5/2015
+* assignment: Quarter Project - Checkpoint 2
+* date last modified: 11/19/2015
 * 
 * purpose: This class represents the camera object which is used to control
 * the camera movements and rotations in the 3d space we created.

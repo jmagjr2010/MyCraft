@@ -1,3 +1,14 @@
+/***************************************************************
+* file: Chunk.java 
+* author: PROFESSOR
+* class: CS 445 – Computer Graphics
+* 
+* assignment: Quarter Project - Checkpoint 2
+* date last modified: 11/19/2015
+* 
+* purpose: Noise generation class provided by professor.
+****************************************************************/
+
 import java.util.Random;
 
 public class SimplexNoise {
