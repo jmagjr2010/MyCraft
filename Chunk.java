@@ -172,12 +172,12 @@ public class Chunk {
         switch (block.GetID()) {
             default:
                 return new float[] {
-                    // Bottom Quadrant
+                    // Top Quadrant
                     x + offset*3, y + offset*10,
                     x + offset*2, y + offset*10,
                     x + offset*2, y + offset*9,
                     x + offset*3, y + offset*9,
-                    // Top Quadrant
+                    // Bottom Quadrant
                     x + offset*3, y + offset*1,
                     x + offset*2, y + offset*1,
                     x + offset*2, y + offset*0,
@@ -194,7 +194,7 @@ public class Chunk {
                     x + offset*4, y + offset*0,
                     // Left Quadrant
                     x + offset*3, y + offset*0,
-                    x + offset*4, y + offset*1,
+                    x + offset*4, y + offset*0,
                     x + offset*4, y + offset*1,
                     x + offset*3, y + offset*1,
                     // Right Quadrant
