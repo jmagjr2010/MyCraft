@@ -54,7 +54,7 @@ public class Chunk {
         for (int x = 0; x < CHUNK_SIZE; x++) {
             for (int y = 0; y < CHUNK_SIZE; y++) {
                 for (int z = 0; z < CHUNK_SIZE; z++) {                 
-                    if (r.nextFloat() > 0.9f) {
+                    if (r.nextFloat() > 0.0f) {
                         Blocks[x][y][z] = new Block(Block.BlockType.BlockType_Grass);
                     } else if(r.nextFloat() > 0.7f) {
                         Blocks[x][y][z] = new Block(Block.BlockType.BlockType_Dirt);

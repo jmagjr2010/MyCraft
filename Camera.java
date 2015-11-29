@@ -15,6 +15,8 @@ import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.Display;
 import org.lwjgl.util.vector.Vector3f;
 import static org.lwjgl.opengl.GL11.*;
+import java.nio.FloatBuffer;
+import org.lwjgl.BufferUtils;
 
 public class Camera {
     private Vector3f position = null;   // Camera's position
@@ -22,7 +24,7 @@ public class Camera {
     private float yaw = 0.0f;           // rotation around Y-axis
     private float pitch = 0.0f;         // rotation around X-axis
     private CameraVector me;            // Camera's coordinates in 3D space.
-    private Chunk chunk = new Chunk(0, 0, 0);
+    private Chunk chunk = new Chunk(-30, 0, -30);
     
     /**
      * Instantiates Camera at specified x,y,z coordinates.
@@ -33,9 +35,9 @@ public class Camera {
     public Camera(float x, float y, float z) {
         position = new Vector3f(x, y, z);
         lPosition = new Vector3f(x, y, z);
-        lPosition.x = 0f;
-        lPosition.y = 15f;
-        lPosition.z = 0f;
+        lPosition.x = 0.0f;
+        lPosition.y = 15.0f;
+        lPosition.z = 0.0f;
     }
 
     /**
@@ -64,6 +66,11 @@ public class Camera {
         float zOffset = distance * (float) Math.cos(Math.toRadians(yaw));
         position.x -= xOffset;
         position.z += zOffset;
+        
+        //NOT USED, we do not want our light source to move
+//        FloatBuffer lightPosition = BufferUtils.createFloatBuffer(4);
+//        lightPosition.put(lPosition.x-=xOffset).put(lPosition.y).put(lPosition.z+=zOffset).put(1.0f).flip();
+//        glLight(GL_LIGHT0, GL_POSITION, lightPosition);
     }
 
     /**
@@ -76,6 +83,11 @@ public class Camera {
         float zOffset = distance * (float) Math.cos(Math.toRadians(yaw));
         position.x += xOffset;
         position.z -= zOffset;
+        
+        //NOT USED, we do not want our light source to move
+//        FloatBuffer lightPosition = BufferUtils.createFloatBuffer(4);
+//        lightPosition.put(lPosition.x+=xOffset).put(lPosition.y).put(lPosition.z-=zOffset).put(1.0f).flip();
+//        glLight(GL_LIGHT0, GL_POSITION, lightPosition);
     }
 
     /**
@@ -88,6 +100,11 @@ public class Camera {
         float zOffset = distance * (float) Math.cos(Math.toRadians(yaw - 90));
         position.x -= xOffset;
         position.z += zOffset;
+        
+        //NOT USED, we do not want our light source to move
+//        FloatBuffer lightPosition = BufferUtils.createFloatBuffer(4);
+//        lightPosition.put(lPosition.x-=xOffset).put(lPosition.y).put(lPosition.z+=zOffset).put(1.0f).flip();
+//        glLight(GL_LIGHT0, GL_POSITION, lightPosition);
     }
 
     /**
@@ -100,6 +117,11 @@ public class Camera {
         float zOffset = distance * (float) Math.cos(Math.toRadians(yaw + 90));
         position.x -= xOffset;
         position.z += zOffset;
+        
+        //NOT USED, we do not want our light source to move
+//        FloatBuffer lightPosition = BufferUtils.createFloatBuffer(4);
+//        lightPosition.put(lPosition.x-=xOffset).put(lPosition.y).put(lPosition.z+=zOffset).put(1.0f).flip();
+//        glLight(GL_LIGHT0, GL_POSITION, lightPosition);
     }
 
     /**
@@ -131,6 +153,10 @@ public class Camera {
         glRotatef(yaw, 0.0f, 1.0f, 0.0f);
         //translate to the position vector's location
         glTranslatef(position.x, position.y, position.z);
+        
+        FloatBuffer lightPosition = BufferUtils.createFloatBuffer(4);
+        lightPosition.put(lPosition.x).put(lPosition.y).put(lPosition.z).put(1.0f).flip();
+        glLight(GL_LIGHT0, GL_POSITION, lightPosition);
     }
     
     /**
@@ -139,8 +165,6 @@ public class Camera {
      * also executes the render method.
      */
     public void gameLoop() {
-        // Begin right in front of the cube
-//        Camera camera = new Camera(0, 0, -3);
         float dx = 0.0f;
         float dy = 0.0f;
         float dt = 0.0f;                // length of a frame
