@@ -23,7 +23,7 @@ import org.newdawn.slick.util.ResourceLoader;
 public class Chunk {
     static final int CHUNK_SIZE = 30;
     static final int CUBE_LENGTH = 2;
-    static final int MIN_HEIGHT = 5;
+    static final int MIN_HEIGHT = 20;
     private Block[][][] Blocks;
     private int VBOVertexHandle;
     private int VBOColorHandle;
@@ -42,6 +42,9 @@ public class Chunk {
      * @param startZ z-coordinate of starting point for chunk.
      */
     public Chunk(int startX, int startY, int startZ) {
+        StartX = startX;
+        StartY = startY;
+        StartZ = startZ;
         try {
             texture = TextureLoader.getTexture("PNG", ResourceLoader.getResourceAsStream("terrain.png"));
         }
@@ -49,34 +52,84 @@ public class Chunk {
             System.out.print("ER-ROAR!");
         }
         r = new Random();
+        noise = new SimplexNoise(CHUNK_SIZE, 0.03, r.nextInt());
         Blocks = new Block[CHUNK_SIZE][CHUNK_SIZE][CHUNK_SIZE];
         
         for (int x = 0; x < CHUNK_SIZE; x++) {
-            for (int y = 0; y < CHUNK_SIZE; y++) {
-                for (int z = 0; z < CHUNK_SIZE; z++) {                 
-                    if (r.nextFloat() > 0.0f) {
-                        Blocks[x][y][z] = new Block(Block.BlockType.BlockType_Grass);
-                    } else if(r.nextFloat() > 0.7f) {
-                        Blocks[x][y][z] = new Block(Block.BlockType.BlockType_Dirt);
-                    } else if(r.nextFloat() > 0.5f) {
-                        Blocks[x][y][z] = new Block(Block.BlockType.BlockType_Sand);
-                    } else if(r.nextFloat() > 0.3f) {
-                        Blocks[x][y][z] = new Block(Block.BlockType.BlockType_Water);
-                    } else if(r.nextFloat() > 0.1f) {
-                        Blocks[x][y][z] = new Block(Block.BlockType.BlockType_Stone);
-                    } else {
+            for (int z = 0; z < CHUNK_SIZE; z++) {         
+                int i = (int)(StartX + x * ((CHUNK_SIZE - StartX) / CHUNK_SIZE));
+                int k = (int)(StartZ + z * ((CHUNK_SIZE - StartY) / CHUNK_SIZE));
+                int maxHeight = (StartY + (int)(100 * noise.getNoise(i,5,k) * CUBE_LENGTH));
+                
+                for (int y = 0; y < CHUNK_SIZE; y++) {
+                    Blocks[x][y][z] = new Block(Block.BlockType.BlockType_Default);
+                    
+                    if (y == 0) {
                         Blocks[x][y][z] = new Block(Block.BlockType.BlockType_Bedrock);
+                    } else if (y < MIN_HEIGHT) {
+                        if (r.nextFloat() > 0.5)
+                            Blocks[x][y][z] = new Block(Block.BlockType.BlockType_Stone);
+                        else
+                            Blocks[x][y][z] = new Block(Block.BlockType.BlockType_Dirt);
+                        
+                        if (maxHeight < 0 && y + 1 == MIN_HEIGHT) {
+                            Blocks[x][y][z] = new Block(Block.BlockType.BlockType_Water);
+                        }
+                    } else if (y == MIN_HEIGHT + maxHeight) {
+                        Blocks[x][y][z] = new Block(Block.BlockType.BlockType_Grass);
+                    } else {
+                        if (maxHeight == 1) {
+                            Blocks[x][y][z] = new Block(Block.BlockType.BlockType_Sand);
+                        } else {
+                            Blocks[x][y][z] = new Block(Block.BlockType.BlockType_Grass);
+                        }
+                    }
+                    
+                    if (y > MIN_HEIGHT + maxHeight) {
+                        Blocks[x][y][z].SetActive(false);
                     }
                 }
             }
         }
+        
+        for (int x = 0; x < CHUNK_SIZE; x++) {
+            for (int z = 0; z < CHUNK_SIZE; z++) {
+                for (int y = 0; y < CHUNK_SIZE; y++) {
+                    boolean finished = false;
+                    
+                    if (!Blocks[x][y][z].IsActive()) {
+                        break;
+                    }
+                    
+                    switch (Blocks[x][y][z].GetID()) {
+                        case 0:
+                            Blocks[x][y-1][z] = new Block(Block.BlockType.BlockType_Dirt);
+                            Blocks[x][y-2][z] = new Block(Block.BlockType.BlockType_Dirt);
+                            finished = true;
+                            break;
+                        case 1:
+                            Blocks[x][y-1][z] = new Block(Block.BlockType.BlockType_Sand);
+                            Blocks[x][y-2][z] = new Block(Block.BlockType.BlockType_Sand);
+                            finished = true;
+                            break;
+                        case 2:
+                            Blocks[x][y][z] = new Block(Block.BlockType.BlockType_Sand);
+                            Blocks[x][y-1][z] = new Block(Block.BlockType.BlockType_Sand);
+                        default:
+                            break;
+                    }
+                    
+                    if (finished) {
+                        break;
+                    }
+                }
+            }
+        }
+        
         VBOColorHandle = glGenBuffers();
         VBOVertexHandle = glGenBuffers();
         VBOTextureHandle = glGenBuffers();
-        StartX = startX;
-        StartY = startY;
-        StartZ = startZ;
-        rebuildMesh(startX, startY, startZ);
+        rebuildMesh();
     }
     
     /**
@@ -97,36 +150,31 @@ public class Chunk {
     
     /**
      * Builds the layout of all the blocks within the 3d world.
-     * @param startX starting x-point for chunk.
-     * @param startY starting y-point for chunk.
-     * @param startZ starting z-point for chunk.
      */
-    public void rebuildMesh(float startX, float startY, float startZ) {
-        VBOColorHandle = glGenBuffers();
-        VBOVertexHandle = glGenBuffers();
-        VBOTextureHandle = glGenBuffers();
+    public void rebuildMesh() {
         FloatBuffer vertexPositionData = BufferUtils.createFloatBuffer((CHUNK_SIZE*CHUNK_SIZE*CHUNK_SIZE)*6*12);
         FloatBuffer vertexColorData = BufferUtils.createFloatBuffer((CHUNK_SIZE*CHUNK_SIZE*CHUNK_SIZE)*6*12);
         FloatBuffer vertexTextureData = BufferUtils.createFloatBuffer((CHUNK_SIZE*CHUNK_SIZE*CHUNK_SIZE)*6*12);
         
-        noise = new SimplexNoise(CHUNK_SIZE, 0.04, r.nextInt());
-        float maxHeight;
-        
         for (float x = 0; x < CHUNK_SIZE; x += 1) {
             for (float z = 0; z < CHUNK_SIZE; z += 1) {
-                for (float y = 0; y < CHUNK_SIZE; y++) {
-                    int i = (int)(startX + x * ((CHUNK_SIZE - startX) / CHUNK_SIZE));
-                    int k = (int)(startZ + z * ((CHUNK_SIZE - startY) / CHUNK_SIZE));
-//                    int j = (int)(startY + y * ((30 - startY) / 5));
-                    maxHeight = (startY + (int)(100 * noise.getNoise(i,k) * CUBE_LENGTH));
-                    
-                    if (y <= MIN_HEIGHT || y < MIN_HEIGHT + maxHeight) {
-                        vertexPositionData.put(createCube((float)(startX + x * CUBE_LENGTH), (float)(y * CUBE_LENGTH + (int)(CHUNK_SIZE * .8)), (float)(startZ + z * CUBE_LENGTH)));
-                        vertexTextureData.put(createTexCube((float) 0, (float) 0, Blocks[(int) x][(int) y][(int) z]));
-                        vertexColorData.put(createCubeVertexCol());
+//                int i = (int)(StartX + x * ((CHUNK_SIZE - StartX) / CHUNK_SIZE));
+//                int k = (int)(StartZ + z * ((CHUNK_SIZE - StartX) / CHUNK_SIZE));
+//                int maxHeight = (StartY + (int)(100 * noise.getNoise(i,k) * CUBE_LENGTH));
+                
+                for (float y = 0; y < MIN_HEIGHT; y++) {
+                    vertexPositionData.put(createCube((float)(StartX + x * CUBE_LENGTH), (float)(y * CUBE_LENGTH + (int)(CHUNK_SIZE * .8)), (float)(StartZ + z * CUBE_LENGTH)));
+                    vertexTextureData.put(createTexCube((float) 0, (float) 0, Blocks[(int) x][(int) y][(int) z]));
+                    vertexColorData.put(createCubeVertexCol());
+                }
+                
+                for (float y = MIN_HEIGHT; y < CHUNK_SIZE; y++) {
+                    if (!Blocks[(int)x][(int)y][(int)z].IsActive()) {
+                        continue;
                     }
-                    else
-                        break;
+                    vertexPositionData.put(createCube((float)(StartX + x * CUBE_LENGTH), (float)(y * CUBE_LENGTH + (int)(CHUNK_SIZE * .8)), (float)(StartZ + z * CUBE_LENGTH)));
+                    vertexTextureData.put(createTexCube((float) 0, (float) 0, Blocks[(int) x][(int) y][(int) z]));
+                    vertexColorData.put(createCubeVertexCol());
                 }
             }
         }

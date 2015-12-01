@@ -51,6 +51,7 @@ public class Block {
      */
     public Block(BlockType type) {
         Type = type;
+        IsActive = true;
     }
     
     /**
