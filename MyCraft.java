@@ -40,6 +40,7 @@ public class MyCraft {
     private DisplayMode displayMode;
     private FloatBuffer lightPosition;
     private FloatBuffer whiteLight;
+    private Sound sound;
     
     /**
      * Method used to begin creating display.
@@ -48,6 +49,8 @@ public class MyCraft {
         try {
             createWindow();
             initGL();
+            sound = new Sound();
+            sound.playSound();
             fp = new Camera(0f, -50f, -30f);
             fp.gameLoop(); // exectues render method
         } catch (Exception e) {
