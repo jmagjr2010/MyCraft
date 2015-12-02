@@ -3,20 +3,15 @@
 * author: Jorge Magana, Jonathan Wong, Michael Ng 
 * class: CS 445 – Computer Graphics
 * 
-* assignment: Quarter Project - Checkpoint 2
-* date last modified: 11/19/2015
+* assignment: Quarter Project - Final Checkpoint
+* date last modified: 12/1/2015
 * 
 * purpose: This program simulates a basic Minecraft-like game. This version
 * should have created a 30x30 chunk area to render randomly placed blocks. The
-* minimum height has been set to 5 blocks in order to keep a foundation. The noise
+* minimum height has been set to 20 blocks in order to keep a foundation. The noise
 * generation can be modified in the Chunk.java file to increase or decrease terrain
 * levels. By default terrain levels are set to low to show smooth increase in hills
-* and valleys.
-* 
-* NOTE: Currently all blocks are also randomly textured. If you would like only
-* 1 type of texture to be displayed, please add 1.0 to r.nextInt() in the constructor
-* of the chunk class, that way the randomly generated block will always be a grass
-* block.
+* and valleys, along with rivers/lakes.
 * 
 * CONTROLS: 
 * ESC   - Closes the program.

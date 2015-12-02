@@ -3,8 +3,8 @@
 * author: Jorge Magana, Jonathan Wong, Michael Ng 
 * class: CS 445 – Computer Graphics
 * 
-* assignment: Quarter Project - Checkpoint 2
-* date last modified: 11/19/2015
+* assignment: Quarter Project - Final Checkpoint
+* date last modified: 12/1/2015
 * 
 * purpose: This class represents the camera object which is used to control
 * the camera movements and rotations in the 3d space we created.
@@ -23,8 +23,8 @@ public class Camera {
     private Vector3f lPosition = null;  // Camera's Lposition
     private float yaw = 0.0f;           // rotation around Y-axis
     private float pitch = 0.0f;         // rotation around X-axis
-    private CameraVector me;            // Camera's coordinates in 3D space.
-    private Chunk chunk = new Chunk(-30, 0, -30);
+    private ViewFrustum vf = new ViewFrustum();
+    private Chunk chunk = new Chunk(-30, 0, -30, vf);
     
     /**
      * Instantiates Camera at specified x,y,z coordinates.
@@ -38,6 +38,8 @@ public class Camera {
         lPosition.x = 0.0f;
         lPosition.y = 15.0f;
         lPosition.z = 0.0f;
+        vf.initFrustum();
+        chunk.setViewFrustum(vf);
     }
 
     /**
@@ -66,11 +68,6 @@ public class Camera {
         float zOffset = distance * (float) Math.cos(Math.toRadians(yaw));
         position.x -= xOffset;
         position.z += zOffset;
-        
-        //NOT USED, we do not want our light source to move
-//        FloatBuffer lightPosition = BufferUtils.createFloatBuffer(4);
-//        lightPosition.put(lPosition.x-=xOffset).put(lPosition.y).put(lPosition.z+=zOffset).put(1.0f).flip();
-//        glLight(GL_LIGHT0, GL_POSITION, lightPosition);
     }
 
     /**
@@ -83,11 +80,6 @@ public class Camera {
         float zOffset = distance * (float) Math.cos(Math.toRadians(yaw));
         position.x += xOffset;
         position.z -= zOffset;
-        
-        //NOT USED, we do not want our light source to move
-//        FloatBuffer lightPosition = BufferUtils.createFloatBuffer(4);
-//        lightPosition.put(lPosition.x+=xOffset).put(lPosition.y).put(lPosition.z-=zOffset).put(1.0f).flip();
-//        glLight(GL_LIGHT0, GL_POSITION, lightPosition);
     }
 
     /**
@@ -100,11 +92,6 @@ public class Camera {
         float zOffset = distance * (float) Math.cos(Math.toRadians(yaw - 90));
         position.x -= xOffset;
         position.z += zOffset;
-        
-        //NOT USED, we do not want our light source to move
-//        FloatBuffer lightPosition = BufferUtils.createFloatBuffer(4);
-//        lightPosition.put(lPosition.x-=xOffset).put(lPosition.y).put(lPosition.z+=zOffset).put(1.0f).flip();
-//        glLight(GL_LIGHT0, GL_POSITION, lightPosition);
     }
 
     /**
@@ -117,11 +104,6 @@ public class Camera {
         float zOffset = distance * (float) Math.cos(Math.toRadians(yaw + 90));
         position.x -= xOffset;
         position.z += zOffset;
-        
-        //NOT USED, we do not want our light source to move
-//        FloatBuffer lightPosition = BufferUtils.createFloatBuffer(4);
-//        lightPosition.put(lPosition.x-=xOffset).put(lPosition.y).put(lPosition.z+=zOffset).put(1.0f).flip();
-//        glLight(GL_LIGHT0, GL_POSITION, lightPosition);
     }
 
     /**
@@ -198,25 +180,37 @@ public class Camera {
             if (Keyboard.isKeyDown(Keyboard.KEY_W))//move forward
             {
                 walkForward(movementSpeed);
+                vf.initFrustum();
+                chunk.setViewFrustum(vf);
             }
             if (Keyboard.isKeyDown(Keyboard.KEY_S))//move backwards
             {
                 walkBackwards(movementSpeed);
+                vf.initFrustum();
+                chunk.setViewFrustum(vf);
             }
             if (Keyboard.isKeyDown(Keyboard.KEY_A))//strafe left 
             {
                 strafeLeft(movementSpeed);
+                vf.initFrustum();
+                chunk.setViewFrustum(vf);
             }
             if (Keyboard.isKeyDown(Keyboard.KEY_D))//strafe right 
             {
                 strafeRight(movementSpeed);
+                vf.initFrustum();
+                chunk.setViewFrustum(vf);
             }
             if (Keyboard.isKeyDown(Keyboard.KEY_SPACE))//move up 
             {
                 moveUp(movementSpeed);
+                vf.initFrustum();
+                chunk.setViewFrustum(vf);
             }
             if (Keyboard.isKeyDown(Keyboard.KEY_LSHIFT)) {
                 moveDown(movementSpeed);
+                vf.initFrustum();
+                chunk.setViewFrustum(vf);
             }
             
             //reset modelview matrix
@@ -232,97 +226,5 @@ public class Camera {
             Display.sync(60);
         }
         Display.destroy();
-    }
-    
-    /**
-     * Primary method used to draw pixel graphics onto screen.
-     */
-    private void render() {
-        try {
-            glBegin(GL_QUADS);
-            //Top of block
-            glColor3f(0.0f, 0.0f, 1.0f);
-            glVertex3f(1.0f, 1.0f, -1.0f);
-            glVertex3f(-1.0f, 1.0f, -1.0f);
-            glVertex3f(-1.0f, 1.0f, 1.0f);
-            glVertex3f(1.0f, 1.0f, 1.0f);
-            //Bottom of block
-            glColor3f(0.0f, 1.0f, 0.0f);
-            glVertex3f(1.0f, -1.0f, 1.0f);
-            glVertex3f(-1.0f, -1.0f, 1.0f);
-            glVertex3f(-1.0f, -1.0f, -1.0f);
-            glVertex3f(1.0f, -1.0f, -1.0f);
-            //Front of block
-            glColor3f(1.0f, 0.0f, 0.0f);
-            glVertex3f(1.0f, 1.0f, 1.0f);
-            glVertex3f(-1.0f, 1.0f, 1.0f);
-            glVertex3f(-1.0f, -1.0f, 1.0f);
-            glVertex3f(1.0f, -1.0f, 1.0f);
-            //Back of block
-            glColor3f(0.0f, 1.0f, 1.0f);
-            glVertex3f(1.0f, -1.0f, -1.0f);
-            glVertex3f(-1.0f, -1.0f, -1.0f);
-            glVertex3f(-1.0f, 1.0f, -1.0f);
-            glVertex3f(1.0f, 1.0f, -1.0f);
-            //Left of block
-            glColor3f(1.0f, 0.0f, 1.0f);
-            glVertex3f(-1.0f, 1.0f, 1.0f);
-            glVertex3f(-1.0f, 1.0f, -1.0f);
-            glVertex3f(-1.0f, -1.0f, -1.0f);
-            glVertex3f(-1.0f, -1.0f, 1.0f);
-            //Right of block
-            glColor3f(1.0f, 1.0f, 0.0f);
-            glVertex3f(1.0f, 1.0f, -1.0f);
-            glVertex3f(1.0f, 1.0f, 1.0f);
-            glVertex3f(1.0f, -1.0f, 1.0f);
-            glVertex3f(1.0f, -1.0f, -1.0f);
-            glEnd();
-            
-            glBegin(GL_LINE_LOOP);
-            //Top
-            glColor3f(0.0f, 0.0f, 0.0f);
-            glVertex3f(1.0f, 1.0f, -1.0f);
-            glVertex3f(-1.0f, 1.0f, -1.0f);
-            glVertex3f(-1.0f, 1.0f, 1.0f);
-            glVertex3f(1.0f, 1.0f, 1.0f);
-            glEnd();
-            glBegin(GL_LINE_LOOP);
-            //Bottom
-            glVertex3f(1.0f, -1.0f, 1.0f);
-            glVertex3f(-1.0f, -1.0f, 1.0f);
-            glVertex3f(-1.0f, -1.0f, -1.0f);
-            glVertex3f(1.0f, -1.0f, -1.0f);
-            glEnd();
-            glBegin(GL_LINE_LOOP);
-            //Front
-            glVertex3f(1.0f, 1.0f, 1.0f);
-            glVertex3f(-1.0f, 1.0f, 1.0f);
-            glVertex3f(-1.0f, -1.0f, 1.0f);
-            glVertex3f(1.0f, -1.0f, 1.0f);
-            glEnd();
-            glBegin(GL_LINE_LOOP);
-            //Back
-            glVertex3f(1.0f, -1.0f, -1.0f);
-            glVertex3f(-1.0f, -1.0f, -1.0f);
-            glVertex3f(-1.0f, 1.0f, -1.0f);
-            glVertex3f(1.0f, 1.0f, -1.0f);
-            glEnd();
-            glBegin(GL_LINE_LOOP);
-            //Left
-            glVertex3f(-1.0f, 1.0f, 1.0f);
-            glVertex3f(-1.0f, 1.0f, -1.0f);
-            glVertex3f(-1.0f, -1.0f, -1.0f);
-            glVertex3f(-1.0f, -1.0f, 1.0f);
-            glEnd();
-            glBegin(GL_LINE_LOOP);
-            //Right
-            glVertex3f(1.0f, 1.0f, -1.0f);
-            glVertex3f(1.0f, 1.0f, 1.0f);
-            glVertex3f(1.0f, -1.0f, 1.0f);
-            glVertex3f(1.0f, -1.0f, -1.0f);
-            glEnd();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
     }
 }

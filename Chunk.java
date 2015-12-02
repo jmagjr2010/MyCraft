@@ -3,12 +3,13 @@
 * author: Jorge Magana, Jonathan Wong, Michael Ng 
 * class: CS 445 – Computer Graphics
 * 
-* assignment: Quarter Project - Checkpoint 2
-* date last modified: 11/19/2015
+* assignment: Quarter Project - Final Checkpoint
+* date last modified: 12/1/2015
 * 
 * purpose: This class is used to generate the 3d world filled with randomly
 * placed blocks through noise generation. It also contains the main render method
 * of this application.
+* NOTE: If you wish to use View Frustum Culling, please set ViewFrustumCulling to true.
 ****************************************************************/
 import java.nio.FloatBuffer;
 import java.util.Random;
@@ -24,27 +25,31 @@ public class Chunk {
     static final int CHUNK_SIZE = 30;
     static final int CUBE_LENGTH = 2;
     static final int MIN_HEIGHT = 20;
+    private boolean ViewFrustumCulling = false;
     private Block[][][] Blocks;
     private int VBOVertexHandle;
     private int VBOColorHandle;
+    private int VBOTextureHandle;
     private int StartX, StartY, StartZ;
     private Random r;
-    private int VBOTextureHandle;
     private Texture texture;
     private SimplexNoise noise;
+    private ViewFrustum viewFrustum;
     
     /**
      * Constructor for Chunk class. Initializes image file for texture mapping and
      * initializes starting point of chunk along with each block that is generated
-     * within the chunk.
+     * within the chunk. Also creates chunk terrain based on simplex noise generation.
      * @param startX x-coordinate of starting point for chunk.
      * @param startY y-coordinate of starting point for chunk.
      * @param startZ z-coordinate of starting point for chunk.
+     * @param vf     Frustum used for chunk generation.
      */
-    public Chunk(int startX, int startY, int startZ) {
+    public Chunk(int startX, int startY, int startZ, ViewFrustum vf) {
         StartX = startX;
         StartY = startY;
         StartZ = startZ;
+        viewFrustum = vf;
         try {
             texture = TextureLoader.getTexture("PNG", ResourceLoader.getResourceAsStream("terrain.png"));
         }
@@ -56,7 +61,8 @@ public class Chunk {
         Blocks = new Block[CHUNK_SIZE][CHUNK_SIZE][CHUNK_SIZE];
         
         for (int x = 0; x < CHUNK_SIZE; x++) {
-            for (int z = 0; z < CHUNK_SIZE; z++) {         
+            for (int z = 0; z < CHUNK_SIZE; z++) {
+                // generate random max height for each x,z position using simplex noise
                 int i = (int)(StartX + x * ((CHUNK_SIZE - StartX) / CHUNK_SIZE));
                 int k = (int)(StartZ + z * ((CHUNK_SIZE - StartY) / CHUNK_SIZE));
                 int maxHeight = (StartY + (int)(100 * noise.getNoise(i,5,k) * CUBE_LENGTH));
@@ -64,27 +70,37 @@ public class Chunk {
                 for (int y = 0; y < CHUNK_SIZE; y++) {
                     Blocks[x][y][z] = new Block(Block.BlockType.BlockType_Default);
                     
+                    // BedRock at the lowest level.
+                    // Block and Stone randomly placed under top-most terrain.
+                    // NOTE: More stone in lower half and more dirt on top half
+                    // Sand placed right under top-most terrain.
+                    // Rest is grass.
                     if (y == 0) {
                         Blocks[x][y][z] = new Block(Block.BlockType.BlockType_Bedrock);
-                    } else if (y < MIN_HEIGHT) {
-                        if (r.nextFloat() > 0.5)
+                    } else if (y < MIN_HEIGHT/2) {
+                        if (r.nextFloat() > 0.2)
                             Blocks[x][y][z] = new Block(Block.BlockType.BlockType_Stone);
                         else
                             Blocks[x][y][z] = new Block(Block.BlockType.BlockType_Dirt);
                         
                         if (maxHeight < 0 && y + 1 == MIN_HEIGHT) {
-                            Blocks[x][y][z] = new Block(Block.BlockType.BlockType_Water);
-                        }
-                    } else if (y == MIN_HEIGHT + maxHeight) {
-                        Blocks[x][y][z] = new Block(Block.BlockType.BlockType_Grass);
-                    } else {
-                        if (maxHeight == 1) {
                             Blocks[x][y][z] = new Block(Block.BlockType.BlockType_Sand);
-                        } else {
-                            Blocks[x][y][z] = new Block(Block.BlockType.BlockType_Grass);
                         }
+                    } else if (y < MIN_HEIGHT) {
+                        if (r.nextFloat() > 0.8)
+                            Blocks[x][y][z] = new Block(Block.BlockType.BlockType_Stone);
+                        else
+                            Blocks[x][y][z] = new Block(Block.BlockType.BlockType_Dirt);
+                        
+                        if (maxHeight < 0 && y + 1 == MIN_HEIGHT) {
+                            Blocks[x][y][z] = new Block(Block.BlockType.BlockType_Sand);
+                        }
+                    } else {
+                            Blocks[x][y][z] = new Block(Block.BlockType.BlockType_Grass);
                     }
                     
+                    // set any blocks above the max height to inactive.
+                    // should leave craters in terrain.
                     if (y > MIN_HEIGHT + maxHeight) {
                         Blocks[x][y][z].SetActive(false);
                     }
@@ -92,12 +108,25 @@ public class Chunk {
             }
         }
         
+        
+        // Re-iterates through chunk and changes;
+        // Fills craters with water and puts 2 sand blocks under lowest water block
+        // Changes blocks below grass to dirt or can leave as grass by uncommenting "finished = true"
+        // Changes blocks below and above sand to sand
         for (int x = 0; x < CHUNK_SIZE; x++) {
             for (int z = 0; z < CHUNK_SIZE; z++) {
                 for (int y = 0; y < CHUNK_SIZE; y++) {
                     boolean finished = false;
                     
                     if (!Blocks[x][y][z].IsActive()) {
+                        if (y < MIN_HEIGHT) {
+                            Blocks[x][y][z] = new Block(Block.BlockType.BlockType_Sand);
+                            Blocks[x][y-1][z] = new Block(Block.BlockType.BlockType_Sand);
+                            
+                            for (int i = y+1; i < MIN_HEIGHT; i++) {
+                                Blocks[x][i][z] = new Block(Block.BlockType.BlockType_Water);
+                            }
+                        }
                         break;
                     }
                     
@@ -105,16 +134,14 @@ public class Chunk {
                         case 0:
                             Blocks[x][y-1][z] = new Block(Block.BlockType.BlockType_Dirt);
                             Blocks[x][y-2][z] = new Block(Block.BlockType.BlockType_Dirt);
-                            finished = true;
+//                            finished = true;
                             break;
                         case 1:
                             Blocks[x][y-1][z] = new Block(Block.BlockType.BlockType_Sand);
                             Blocks[x][y-2][z] = new Block(Block.BlockType.BlockType_Sand);
+                            Blocks[x][y+1][z] = new Block(Block.BlockType.BlockType_Sand);
                             finished = true;
                             break;
-                        case 2:
-                            Blocks[x][y][z] = new Block(Block.BlockType.BlockType_Sand);
-                            Blocks[x][y-1][z] = new Block(Block.BlockType.BlockType_Sand);
                         default:
                             break;
                     }
@@ -136,6 +163,9 @@ public class Chunk {
      * Renders GL Matrix and buffers for Chunk.
      */
     public void render() {
+        if (ViewFrustumCulling == true)
+            rebuildMesh();
+        
         glPushMatrix();
             glBindBuffer(GL_ARRAY_BUFFER, VBOVertexHandle);
             glVertexPointer(3, GL_FLOAT, 0, 0L);
@@ -149,25 +179,41 @@ public class Chunk {
     }
     
     /**
+     * Sets the Frustum for this chunk.
+     * @param vf View Frustum
+     */
+    public void setViewFrustum(ViewFrustum vf) {
+        viewFrustum = vf;
+    }
+    
+    /**
      * Builds the layout of all the blocks within the 3d world.
      */
-    public void rebuildMesh() {
+    private void rebuildMesh() {
         FloatBuffer vertexPositionData = BufferUtils.createFloatBuffer((CHUNK_SIZE*CHUNK_SIZE*CHUNK_SIZE)*6*12);
         FloatBuffer vertexColorData = BufferUtils.createFloatBuffer((CHUNK_SIZE*CHUNK_SIZE*CHUNK_SIZE)*6*12);
         FloatBuffer vertexTextureData = BufferUtils.createFloatBuffer((CHUNK_SIZE*CHUNK_SIZE*CHUNK_SIZE)*6*12);
         
         for (float x = 0; x < CHUNK_SIZE; x += 1) {
             for (float z = 0; z < CHUNK_SIZE; z += 1) {
-//                int i = (int)(StartX + x * ((CHUNK_SIZE - StartX) / CHUNK_SIZE));
-//                int k = (int)(StartZ + z * ((CHUNK_SIZE - StartX) / CHUNK_SIZE));
-//                int maxHeight = (StartY + (int)(100 * noise.getNoise(i,k) * CUBE_LENGTH));
                 
+                //generate all blocks that are less than the minimum height.
                 for (float y = 0; y < MIN_HEIGHT; y++) {
+                    Blocks[(int)x][(int)y][(int)z].SetActive(true);
+                    // If the block is in the view of the frustum, generate it, otherwise disable it
+                    // NOTE: Only functions is ViewFrustumCulling is true.
+                    if (ViewFrustumCulling == true && !viewFrustum.inFrustum(x, y, z, 2)) {
+                        Blocks[(int)x][(int)y][(int)z].SetActive(false);
+                    }
+                    if (!Blocks[(int)x][(int)y][(int)z].IsActive()) {
+                        continue;
+                    }
                     vertexPositionData.put(createCube((float)(StartX + x * CUBE_LENGTH), (float)(y * CUBE_LENGTH + (int)(CHUNK_SIZE * .8)), (float)(StartZ + z * CUBE_LENGTH)));
                     vertexTextureData.put(createTexCube((float) 0, (float) 0, Blocks[(int) x][(int) y][(int) z]));
                     vertexColorData.put(createCubeVertexCol());
                 }
                 
+                //generate terrain on topmost part of chunk.
                 for (float y = MIN_HEIGHT; y < CHUNK_SIZE; y++) {
                     if (!Blocks[(int)x][(int)y][(int)z].IsActive()) {
                         continue;
@@ -202,21 +248,6 @@ public class Chunk {
         for (int i = 0; i < cubeColors.length; i++) {
             cubeColors[i] = 1;
         }
-        return cubeColors;
-    }
-    
-    /**
-     * UNUSED. Was used for testing when the blocks were colored.
-     * @param CubeColorArray array of floats representing color cubes.
-     * @return array of floats representing cube vertex.
-     */
-    private float[] createCubeVertexCol(float [] CubeColorArray) {
-        float[] cubeColors = new float[CubeColorArray.length * 4 * 6];
-        
-        for (int i = 0; i < cubeColors.length; i++) {
-            cubeColors[i] = CubeColorArray[i % CubeColorArray.length];
-        }
-        
         return cubeColors;
     }
     
@@ -260,15 +291,6 @@ public class Chunk {
                 x + offset, y + offset, z - CUBE_LENGTH,
                 x + offset, y - offset, z - CUBE_LENGTH,
                 x + offset, y - offset, z };
-    }
-    
-    /**
-     * UNUSED. was used for testing when the blocks were colored.
-     * @param block
-     * @return vertex
-     */
-    private float[] getCubeColor(Block block) {        
-        return new float[] {1, 1, 1};
     }
     
     /**

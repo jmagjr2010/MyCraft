@@ -3,8 +3,8 @@
 * author: Jorge Magana, Jonathan Wong, Michael Ng 
 * class: CS 445 – Computer Graphics
 * 
-* assignment: Quarter Project - Checkpoint 2
-* date last modified: 11/19/2015
+* assignment: Quarter Project - Final Checkpoint
+* date last modified: 12/1/2015
 * 
 * purpose: This class is used to represent a block in the 3d space we created.
 * It holds an id, coordinates, and type properties for a block.
